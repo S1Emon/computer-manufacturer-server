@@ -21,6 +21,7 @@ async function run() {
     const serviceCollection = client.db("computerPartsManufacturer").collection("services");
     const partsCollection = client.db("computerPartsManufacturer").collection("parts");
     const orderCollection = client.db("computerPartsManufacturer").collection("orders");
+    const userCollection = client.db("computerPartsManufacturer").collection("users");
 
     try {
         // Getting data
@@ -47,12 +48,23 @@ async function run() {
         })
 
         app.get("/available", async (req, res) => {
-            const available = req.body.available
-            const query = { available: available };
+            const available = req.body.available;
+
             const parts = await partsCollection.find().toArray()
+            const query = { available: available };
 
             const orders = await orderCollection.find(query).toArray()
-            res.send(orders)
+
+            orders.forEach(order => {
+                const partsOrders = orders.filter(order => order.name === parts.name);
+            })
+            res.send(parts)
+        })
+
+        app.get("/orders", async (req, res) => {
+            const query = req.body
+            const orders = await orderCollection.find(query).toArray();
+            res.send(orders);
         })
 
         //Insert Data
@@ -60,6 +72,19 @@ async function run() {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
             res.send(result);
+        })
+
+        //Update Data
+        app.put("/user/:email", async (req, res) => {
+            const email = req.params.email
+            const user = req.body
+            const filter = { email: email }
+            const option = { upsert: true }
+            const updateDoc = {
+                $set: user
+            }
+            const result = await userCollection.updateOne(filter, updateDoc, option)
+            res.send(result)
         })
 
     }
