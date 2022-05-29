@@ -4,6 +4,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 require('dotenv').config();
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
 const cli = require('nodemon/lib/cli');
 
 //middleware
@@ -83,8 +84,9 @@ async function run() {
             const updateDoc = {
                 $set: user
             }
-            const result = await userCollection.updateOne(filter, updateDoc, option)
-            res.send(result)
+            const result = await userCollection.updateOne(filter, updateDoc, option);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, { expiresIn: '1hr' })
+            res.send({ result, token })
         })
 
     }
