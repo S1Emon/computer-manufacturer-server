@@ -20,14 +20,10 @@ async function run() {
     const newCollection = client.db("computerPartsManufacturer").collection("newItems");
     const serviceCollection = client.db("computerPartsManufacturer").collection("services");
     const partsCollection = client.db("computerPartsManufacturer").collection("parts");
+    const orderCollection = client.db("computerPartsManufacturer").collection("orders");
 
     try {
         // Getting data
-
-
-
-
-
         app.get("/parts", async (req, res) => {
             const query = {}
             const result = await partsCollection.find(query).toArray()
@@ -47,6 +43,13 @@ async function run() {
         app.get("/services", async (req, res) => {
             const query = {}
             const result = await serviceCollection.find(query).toArray()
+            res.send(result);
+        })
+
+        //Insert Data
+        app.post("/orders", async (req, res) => {
+            const order = req.body;
+            const result = await orderCollection.insertOne(order);
             res.send(result);
         })
 
