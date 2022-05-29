@@ -46,6 +46,15 @@ async function run() {
             res.send(result);
         })
 
+        app.get("/available", async (req, res) => {
+            const available = req.body.available
+            const query = { available: available };
+            const parts = await partsCollection.find().toArray()
+
+            const orders = await orderCollection.find(query).toArray()
+            res.send(orders)
+        })
+
         //Insert Data
         app.post("/orders", async (req, res) => {
             const order = req.body;
