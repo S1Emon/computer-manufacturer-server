@@ -98,7 +98,7 @@ async function run() {
         })
 
 
-        app.get("/user", async (req, res) => {
+        app.get("/user", verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray();
             res.send(users);
         })
@@ -114,6 +114,16 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, option);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, { expiresIn: '1hr' })
             res.send({ result, token })
+        })
+
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
         })
 
     }
