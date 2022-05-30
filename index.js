@@ -136,7 +136,7 @@ async function run() {
         })
 
         //Insert Data
-        app.post("/orders", async (req, res) => {
+        app.post("/orders", verifyJWT, async (req, res) => {
             const order = req.body;
             const result = await orderCollection.insertOne(order);
             res.send(result);
@@ -147,7 +147,7 @@ async function run() {
             const result = await partsCollection.insertOne(newParts)
             res.send(result);
         })
-        app.post("/review", async (req, res) => {
+        app.post("/review", verifyJWT, async (req, res) => {
             const newReview = req.body
             const result = await reviewCollection.insertOne(newReview)
             res.send(result);
