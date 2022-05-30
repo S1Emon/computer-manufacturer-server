@@ -5,7 +5,6 @@ const port = process.env.PORT || 5000;
 require('dotenv').config();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const cli = require('nodemon/lib/cli');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 //middleware
@@ -135,6 +134,13 @@ async function run() {
             res.send(review)
         })
 
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin });
+        })
+
         //Insert Data
         app.post("/orders", verifyJWT, async (req, res) => {
             const order = req.body;
@@ -187,13 +193,6 @@ async function run() {
             const result = await paymentCollection.insertOne(payment)
             const updateOrder = await orderCollection.updateOne(filter, updateDoc)
             res.send(updateDoc);
-        })
-
-        app.get('/admin/:email', async (req, res) => {
-            const email = req.params.email;
-            const user = await userCollection.findOne({ email: email });
-            const isAdmin = user.role === 'admin';
-            res.send({ admin: isAdmin });
         })
 
         app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
