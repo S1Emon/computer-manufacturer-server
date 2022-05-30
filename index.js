@@ -101,6 +101,13 @@ async function run() {
             }
         });
 
+        app.get("/orders/:id", verifyJWT, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const orders = await orderCollection.findOne(query)
+            res.send(orders);
+        })
+
         // get users 
         app.get("/user", verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray();
@@ -114,9 +121,16 @@ async function run() {
             res.send(result);
         })
 
-        app.post("/parts", async (req, res) => {
+        app.post("/parts", verifyJWT, verifyAdmin, async (req, res) => {
             const newParts = req.body
             const result = await partsCollection.insertOne(newParts)
+            res.send(result);
+        })
+        //Delete
+        app.delete('/parts/:id', verifyJWT, verifyAdmin, async (req, res) => {
+            const id = req.params.id
+            const query = { _id: ObjectId(id) }
+            const result = await partsCollection.deleteOne(query)
             res.send(result);
         })
 
