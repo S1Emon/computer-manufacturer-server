@@ -87,6 +87,7 @@ async function run() {
             res.send(parts)
         })
 
+        // get orders 
         app.get('/orders', verifyJWT, async (req, res) => {
             const email = req.query.email;
             const decodedEmail = req.decoded.email;
@@ -99,11 +100,11 @@ async function run() {
                 return res.status(403).send({ message: 'forbidden access' });
             }
         });
-        app.get('/admin/:email', async (req, res) => {
-            const email = req.params.email;
-            const user = await userCollection.findOne({ email: email });
-            const isAdmin = user.role === 'admin';
-            res.send({ admin: isAdmin })
+
+        // get users 
+        app.get("/user", verifyJWT, async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
         })
 
         //Insert Data
@@ -113,11 +114,6 @@ async function run() {
             res.send(result);
         })
 
-
-        app.get("/user", verifyJWT, async (req, res) => {
-            const users = await userCollection.find().toArray();
-            res.send(users);
-        })
         //Update Data
         app.put("/user/:email", async (req, res) => {
             const email = req.params.email
@@ -130,6 +126,13 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, option);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, { expiresIn: '1hr' })
             res.send({ result, token })
+        })
+
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin });
         })
 
         app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
