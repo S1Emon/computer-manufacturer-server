@@ -6,6 +6,7 @@ require('dotenv').config();
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const cli = require('nodemon/lib/cli');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
 
 //middleware
 app.use(cors())
@@ -38,6 +39,8 @@ async function run() {
     const partsCollection = client.db("computerPartsManufacturer").collection("parts");
     const orderCollection = client.db("computerPartsManufacturer").collection("orders");
     const userCollection = client.db("computerPartsManufacturer").collection("users");
+    const paymentCollection = client.db("computerPartsManufacturer").collection("payment");
+    const reviewCollection = client.db("computerPartsManufacturer").collection("review");
 
     try {
         const verifyAdmin = async (req, res, next) => {
@@ -50,6 +53,19 @@ async function run() {
                 res.status(403).send({ message: 'forbidden' });
             }
         }
+
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+            const { price } = req.body;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            res.send({ clientSecret: paymentIntent.client_secret })
+        })
+
+
         // Getting data
         app.get("/parts", async (req, res) => {
             const query = {}
@@ -114,6 +130,11 @@ async function run() {
             res.send(users);
         })
 
+        app.get("/review", async (req, res) => {
+            const review = await reviewCollection.find().toArray();
+            res.send(review)
+        })
+
         //Insert Data
         app.post("/orders", async (req, res) => {
             const order = req.body;
@@ -124,6 +145,11 @@ async function run() {
         app.post("/parts", verifyJWT, verifyAdmin, async (req, res) => {
             const newParts = req.body
             const result = await partsCollection.insertOne(newParts)
+            res.send(result);
+        })
+        app.post("/review", async (req, res) => {
+            const newReview = req.body
+            const result = await reviewCollection.insertOne(newReview)
             res.send(result);
         })
         //Delete
@@ -146,6 +172,21 @@ async function run() {
             const result = await userCollection.updateOne(filter, updateDoc, option);
             const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN, { expiresIn: '1hr' })
             res.send({ result, token })
+        })
+
+        app.patch("/orders/:id", verifyJWT, async (req, res) => {
+            const id = req.params.id
+            const payment = req.body
+            const filter = { _id: ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId
+                }
+            }
+            const result = await paymentCollection.insertOne(payment)
+            const updateOrder = await orderCollection.updateOne(filter, updateDoc)
+            res.send(updateDoc);
         })
 
         app.get('/admin/:email', async (req, res) => {
